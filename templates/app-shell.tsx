@@ -14,7 +14,11 @@ import {
   AXO_HEADER_BAR,
   AXO_PAGE_CONTAINER,
   AXO_SHELL_BG,
+  AXO_SHELL_GLOW,
   AXO_SHELL_OVERLAY,
+  AXO_SIDEBAR_EDGE,
+  AXO_SIDEBAR_FOOTER,
+  AXO_SIDEBAR_HEADER,
   AXO_SIDEBAR_LINK_ACTIVE,
   AXO_SIDEBAR_LINK_INACTIVE,
   AXO_SIDEBAR_STYLE,
@@ -42,17 +46,26 @@ export function AppShell({
   return (
     // Layer 1 — shell gradient
     <div className={cn("relative min-h-screen", AXO_SHELL_BG)}>
-      {/* Layer 2 — fixed wash */}
+      {/* Layer 2a — ambient bloom. Do not drop this: without it the cards have
+          nothing to refract and the whole system reads as flat panels. */}
+      <div className={AXO_SHELL_GLOW} aria-hidden />
+      {/* Layer 2b — fixed wash */}
       <div className={AXO_SHELL_OVERLAY} aria-hidden />
 
       <div className="relative z-10 flex min-h-screen">
-        {/* Layer 4 — sidebar (theme-invariant deep purple) */}
+        {/* Layer 4 — sidebar (theme-invariant deep purple gradient) */}
         <aside
           style={AXO_SIDEBAR_STYLE}
-          className="hidden w-64 shrink-0 flex-col gap-1 p-4 md:flex"
+          className={cn("hidden w-64 shrink-0 flex-col gap-1 p-3 md:flex", AXO_SIDEBAR_EDGE)}
         >
-          <div className="px-3 py-4 text-lg font-semibold text-white">Axolutions</div>
-          <nav className="flex flex-col gap-1">
+          <div className={AXO_SIDEBAR_HEADER}>
+            <span className="flex size-8 items-center justify-center rounded-xl bg-white/15 text-sm font-semibold">
+              A
+            </span>
+            <span className="text-lg font-semibold">Axolutions</span>
+          </div>
+
+          <nav className="flex flex-col gap-1" aria-label="Main">
             {nav.map((item) => (
               <Link
                 key={item.href}
@@ -69,6 +82,17 @@ export function AppShell({
               </Link>
             ))}
           </nav>
+
+          {/* Theme toggle lives in the header, not here — the sidebar is
+              `hidden md:flex`, so a toggle placed here disappears on mobile. */}
+          <div className={AXO_SIDEBAR_FOOTER}>
+            <div className="flex items-center gap-2.5 px-3 py-2 text-sm text-white/70">
+              <span className="flex size-7 items-center justify-center rounded-full bg-white/15 text-xs font-semibold text-white">
+                U
+              </span>
+              User
+            </div>
+          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">

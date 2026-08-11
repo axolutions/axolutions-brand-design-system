@@ -22,6 +22,14 @@
   --axo-purple-deep: color-mix(in srgb, oklch(0.45 0.25 290) 85%, black);
   --axo-purple-soft: oklch(0.92 0.08 290);
 
+  /* Sidebar fill — a gradient, not a flat slab. A full-height slab of one
+     saturated purple reads cheap; the vertical falloff gives it depth. */
+  --axo-sidebar-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, oklch(0.45 0.25 290) 80%, black) 0%,
+    color-mix(in srgb, oklch(0.45 0.25 290) 55%, black) 100%
+  );
+
   --background: oklch(0.99 0.005 290);
   --foreground: oklch(0.25 0.02 290);
 
@@ -127,8 +135,15 @@
 
 /* ── Tailwind v4 theme mapping ───────────────────────────────────────────── */
 @theme inline {
-  --font-sans: var(--font-geist-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
-  --font-mono: var(--font-geist-mono, ui-monospace, "JetBrains Mono", monospace);
+  /* Brand typeface: Public Sans (+ JetBrains Mono for code and IDs).
+     `--font-public-sans` is set by next/font when the app wires it; the bare
+     family name covers the <link>-loaded case; system-ui is the last resort.
+     Never point this at a variable nothing defines — that silently degrades
+     the whole app to the system font. */
+  --font-sans: var(--font-public-sans, "Public Sans"), system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono, "JetBrains Mono"), ui-monospace,
+    SFMono-Regular, Menlo, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -208,6 +223,30 @@
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* ── Ambient glow (Layer 2b) ─────────────────────────────────────────────── */
+/*
+ * Glassmorphism is a lie without something behind the glass to refract.
+ * A single linear gradient stretched across the viewport is locally flat, so a
+ * translucent card sitting on it looks like a flat panel — which is exactly how
+ * the effect fails. These radial blooms give the backdrop local luminance
+ * variation, so `backdrop-blur` has something to actually blur.
+ *
+ * Applied via AXO_SHELL_GLOW, as a fixed sibling of the shell background.
+ */
+.axo-shell-glow {
+  background-image:
+    radial-gradient(58% 44% at 12% 0%, oklch(0.45 0.25 290 / 0.1), transparent 72%),
+    radial-gradient(48% 38% at 88% 6%, oklch(0.55 0.19 265 / 0.08), transparent 72%),
+    radial-gradient(46% 40% at 62% 100%, oklch(0.5 0.22 300 / 0.07), transparent 72%);
+}
+
+.dark .axo-shell-glow {
+  background-image:
+    radial-gradient(58% 44% at 12% 0%, oklch(0.55 0.27 292 / 0.3), transparent 70%),
+    radial-gradient(50% 38% at 88% 4%, oklch(0.55 0.22 265 / 0.22), transparent 70%),
+    radial-gradient(48% 42% at 66% 100%, oklch(0.5 0.24 305 / 0.2), transparent 72%);
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */

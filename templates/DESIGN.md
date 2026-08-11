@@ -82,9 +82,24 @@ Rules:
 5. `--primary` stays **purple in dark mode** (`oklch(0.58 0.24 292)`). The
    shadcn starter defaults it to near-white in `.dark` — that is a bug, not a
    choice. If you see `--primary: oklch(0.985 0 0)` under `.dark`, fix it.
-6. The **sidebar is theme-invariant**. It renders the same deep purple in light
-   and dark, via `AXO_SIDEBAR_STYLE` (an inline `color-mix()` style, because
-   Tailwind cannot express that value).
+6. The **sidebar is theme-invariant**, and so is everything inside it. It
+   renders the same deep purple gradient in light and dark, via
+   `AXO_SIDEBAR_STYLE` (an inline style, because Tailwind cannot express
+   `color-mix()` gradients).
+
+   This is the one place where "always ship both themes" inverts. Sidebar
+   contents are styled **against purple** — white-based, no `dark:` variants:
+
+   ```tsx
+   // ✅ readable in both themes, because the panel never changes
+   "text-white/65 hover:text-white hover:bg-white/10"
+
+   // ❌ in light mode this is dark purple text on a dark purple panel
+   "text-purple-900/50 dark:text-white/40"
+   ```
+
+   Anything you add to the sidebar — labels, dividers, the user block, badges —
+   follows the same rule.
 
 ---
 
@@ -95,14 +110,23 @@ The shell is six stacked layers. Order and z-index are load-bearing.
 ```
 Layer 0  <body>              bg-background            token, visually covered by the shell
 Layer 1  Shell wrapper       AXO_SHELL_BG             gradient background, min-h-screen
-Layer 2  Overlay             AXO_SHELL_OVERLAY        fixed inset-0, pointer-events-none, z-0
+Layer 2a Ambient glow        AXO_SHELL_GLOW           fixed radial blooms — REQUIRED
+Layer 2b Overlay             AXO_SHELL_OVERLAY        fixed inset-0, pointer-events-none, z-0
 Layer 3  Header              AXO_HEADER_BAR           glass bar, relative z-10
-Layer 4  Sidebar             AXO_SIDEBAR_STYLE        fixed deep purple (inline style)
+Layer 4  Sidebar             AXO_SIDEBAR_STYLE        deep purple gradient (inline style)
 Layer 5  Page container      AXO_PAGE_CONTAINER       glass wrapper around page content
 Layer 6  Card                AXO_GLASS_CARD           glass card (+ AXO_CARD_OVERLAY inside)
 ```
 
-Two failure modes to watch for:
+**Layer 2a is not decoration.** Glassmorphism is a lie without something behind
+the glass to refract. `AXO_SHELL_BG` alone is a single linear gradient stretched
+across the viewport — locally flat, so a translucent card sitting on it has
+nothing to blur and renders as a flat panel. The radial blooms in
+`AXO_SHELL_GLOW` give the backdrop local luminance variation, which is what
+makes the glass read as glass. Drop it and the entire system looks broken while
+every individual class is still technically correct.
+
+Two more failure modes to watch for:
 
 - **Content vanishing under the wash.** Layer 2 is `fixed inset-0 z-0`. Anything
   above it needs `relative` plus a z-index. The shell's inner wrapper should be
@@ -183,12 +207,23 @@ scales (they harmonise with `#5D0EC1`), used **only inside `shell-identity.ts`**
 | Constant | Use |
 |---|---|
 | `AXO_SHELL_BG` | Layer 1 — outermost gradient |
-| `AXO_SHELL_OVERLAY` | Layer 2 — fixed wash (`aria-hidden`) |
+| `AXO_SHELL_GLOW` | Layer 2a — ambient bloom, **required** (`aria-hidden`) |
+| `AXO_SHELL_OVERLAY` | Layer 2b — fixed wash (`aria-hidden`) |
 | `AXO_HEADER_BAR` | Layer 3 — top bar |
 | `AXO_PAGE_CONTAINER` | Layer 5 — page wrapper |
 | `AXO_GLASS_CARD` | Layer 6 — card surface |
 | `AXO_CARD_OVERLAY` | inner glow, absolute sibling inside a card |
 | `AXO_SIDEBAR_STYLE` | Layer 4 — inline `style`, not a class |
+
+### Sidebar (all theme-invariant — see §2.6)
+| Constant | Use |
+|---|---|
+| `AXO_SIDEBAR_EDGE` | right edge separation |
+| `AXO_SIDEBAR_HEADER` | brand/logo block |
+| `AXO_SIDEBAR_SECTION_LABEL` | uppercase group label |
+| `AXO_SIDEBAR_DIVIDER` | divider between sections |
+| `AXO_SIDEBAR_FOOTER` | user / account region |
+| `AXO_SIDEBAR_LINK_ACTIVE` / `_INACTIVE` | nav links |
 
 ### Text
 | Constant | Use |
@@ -221,7 +256,6 @@ scales (they harmonise with `#5D0EC1`), used **only inside `shell-identity.ts`**
 | `AXO_EMPTY_STATE` | zero-data states |
 | `AXO_SKELETON` | loading placeholders |
 | `AXO_TOOLTIP` | tooltip surface |
-| `AXO_SIDEBAR_LINK_ACTIVE` / `_INACTIVE` | sidebar nav |
 
 Need something not on this list? **Add it to `shell-identity.ts`** with both
 light and dark variants and a JSDoc line. Do not inline it in a component.
@@ -244,8 +278,11 @@ Never mix `rounded-2xl` into a card — the family is 3xl → xl → full.
 **Spacing** — 4px scale. Card padding `p-6` (`p-4` on mobile), section gaps
 `gap-6`, inline element gaps `gap-3`, tight icon+label `gap-2`.
 
-**Typography** — `--font-sans` (Geist Sans → system fallback), `--font-mono` for
-code and IDs.
+**Typography** — the brand typeface is **Public Sans**, with **JetBrains Mono**
+for code and IDs. It must actually be loaded (`next/font/google` in Next, a
+stylesheet link elsewhere) — `--font-sans` falls back to system-ui, and an app
+running on the fallback looks generic no matter how correct everything else is.
+If text looks like plain SF Pro or Segoe UI, the font never loaded.
 
 | Role | Classes |
 |---|---|

@@ -17,6 +17,11 @@
     --axo-purple: oklch(0.45 0.25 290); /* #5D0EC1 */
     --axo-purple-deep: color-mix(in srgb, oklch(0.45 0.25 290) 85%, black);
     --axo-purple-soft: oklch(0.92 0.08 290);
+    --axo-sidebar-gradient: linear-gradient(
+      180deg,
+      color-mix(in srgb, oklch(0.45 0.25 290) 80%, black) 0%,
+      color-mix(in srgb, oklch(0.45 0.25 290) 55%, black) 100%
+    );
 
     --background: oklch(0.99 0.005 290);
     --foreground: oklch(0.25 0.02 290);
@@ -75,6 +80,25 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-public-sans, "Public Sans"), system-ui, -apple-system,
+      "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* Ambient glow — required for the glass to read as glass. See globals.css
+     for the full rationale; without local luminance variation behind them,
+     translucent cards collapse into flat panels. */
+  .axo-shell-glow {
+    background-image:
+      radial-gradient(58% 44% at 12% 0%, oklch(0.45 0.25 290 / 0.1), transparent 72%),
+      radial-gradient(48% 38% at 88% 6%, oklch(0.55 0.19 265 / 0.08), transparent 72%),
+      radial-gradient(46% 40% at 62% 100%, oklch(0.5 0.22 300 / 0.07), transparent 72%);
+  }
+
+  .dark .axo-shell-glow {
+    background-image:
+      radial-gradient(58% 44% at 12% 0%, oklch(0.55 0.27 292 / 0.3), transparent 70%),
+      radial-gradient(50% 38% at 88% 4%, oklch(0.55 0.22 265 / 0.22), transparent 70%),
+      radial-gradient(48% 42% at 66% 100%, oklch(0.5 0.24 305 / 0.2), transparent 72%);
   }
 
   @media (prefers-reduced-motion: reduce) {

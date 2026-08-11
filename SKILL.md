@@ -72,6 +72,26 @@ plugins. Read `references/stack-setup.md` for the exact per-framework steps.
 Skip any already present. Do not upgrade or downgrade Tailwind across a major
 version without asking the user first — a v3→v4 migration is its own task.
 
+**Fonts — do not skip this.** The brand typeface is **Public Sans**, with
+**JetBrains Mono** for code and IDs. `globals.css` points `--font-sans` at
+`var(--font-public-sans, "Public Sans")`, so if nothing loads the font the app
+silently falls back to system-ui and looks generic no matter how correct the
+rest of the system is. Wire it for the detected stack:
+
+```tsx
+// Next.js — app/layout.tsx
+import { Public_Sans, JetBrains_Mono } from "next/font/google";
+
+const sans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"], display: "swap" });
+const mono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"], display: "swap" });
+
+<html lang="pt-BR" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
+```
+
+For Vite or static HTML, load it with a stylesheet link instead — see
+`references/stack-setup.md`. Afterwards, confirm in the browser that the
+rendered font is actually Public Sans and not the system fallback.
+
 ### Phase 3 — Write DESIGN.md
 
 The target repo's `DESIGN.md`, at its root.
@@ -140,9 +160,21 @@ phase 5.
    `templates/app-shell.tsx`. If the project already has a layout with a sidebar
    and header, convert it in place rather than replacing it — keep its nav data,
    routing, and behaviour; swap only the visual classes.
+   **`AXO_SHELL_GLOW` is mandatory.** Glassmorphism needs local luminance
+   variation behind the glass; a single linear gradient across the viewport is
+   locally flat, so without the bloom layer every card collapses into a flat
+   panel and the whole system looks wrong. This is the most common way the
+   result fails while every individual class is technically correct.
 2. **Sidebar.** Apply `AXO_SIDEBAR_STYLE` as an inline `style`, and
    `AXO_SIDEBAR_LINK_ACTIVE` / `_INACTIVE` to nav links. Add
-   `aria-current="page"` to the active one.
+   `aria-current="page"` to the active one. Use `AXO_SIDEBAR_HEADER`,
+   `AXO_SIDEBAR_SECTION_LABEL`, `AXO_SIDEBAR_DIVIDER` and `AXO_SIDEBAR_FOOTER`
+   to give it structure — an unbroken full-height slab of saturated purple with
+   five links floating at the top looks unfinished.
+   **Everything inside the sidebar is theme-invariant.** The sidebar is always
+   deep purple, so its contents are styled against purple (white-based), never
+   against the page theme. Adding a light-mode variant to something in the
+   sidebar paints dark text on a dark panel and it disappears.
 3. **Cards.** Every card-like surface becomes `AXO_GLASS_CARD` +
    `AXO_CARD_OVERLAY`, content in a `relative z-10` wrapper. See
    `templates/card-example.tsx`.
@@ -179,6 +211,9 @@ Then check by hand:
 - [ ] `darkMode: "class"` (v3) / `@custom-variant dark` (v4)
 - [ ] `ThemeProvider` with `attribute="class"`, `<html suppressHydrationWarning>`
 - [ ] Theme toggle reachable and working both directions
+- [ ] **Public Sans actually rendering** — not the system fallback
+- [ ] **`AXO_SHELL_GLOW` present** and cards read as glass, not flat panels
+- [ ] Sidebar links readable in **light** mode (the theme-invariance trap)
 - [ ] Shell layers applied; nothing hidden under the overlay
 - [ ] Audit script reports no violations, or each remaining one is explained
 - [ ] Build passes
@@ -224,6 +259,7 @@ templates/
   cn.ts                         clsx + tailwind-merge helper
   app-shell.tsx                 reference layout, layers 1→6
   card-example.tsx              canonical glass card composition
+  static-shell.html             complete no-build page (CDN Tailwind)
 references/
   stack-setup.md                per-framework install steps
   migration.md                  converting an existing codebase

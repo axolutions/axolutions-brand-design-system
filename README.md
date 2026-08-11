@@ -95,15 +95,30 @@ nothing else.
 
 ```
 Layer 1  Shell wrapper    AXO_SHELL_BG          gradient background
-Layer 2  Overlay          AXO_SHELL_OVERLAY     fixed wash, z-0
+Layer 2a Ambient glow     AXO_SHELL_GLOW        radial blooms — required
+Layer 2b Overlay          AXO_SHELL_OVERLAY     fixed wash, z-0
 Layer 3  Header           AXO_HEADER_BAR        glass bar, relative z-10
 Layer 4  Sidebar          AXO_SIDEBAR_STYLE     deep purple, theme-invariant
 Layer 5  Page container   AXO_PAGE_CONTAINER    glass wrapper
 Layer 6  Card             AXO_GLASS_CARD        glass card + inner glow
 ```
 
-The sidebar is deliberately the same deep purple in both themes — it uses an
-inline `color-mix()` style because Tailwind can't express that value.
+Layer 2a is load-bearing, not decoration. Glassmorphism needs something behind
+the glass to refract; `AXO_SHELL_BG` alone is a single linear gradient across
+the viewport, which is locally flat, so cards render as flat panels. The radial
+blooms give the backdrop the luminance variation that makes glass read as glass.
+
+The sidebar is deliberately the same deep purple gradient in both themes — and
+so is **everything inside it**. That's the one place the "always ship both
+themes" rule inverts: a `dark:` variant on a sidebar link paints dark purple
+text onto a dark purple panel and disappears in light mode.
+
+### Typography
+
+**Public Sans**, with **JetBrains Mono** for code and IDs. The skill wires the
+font (`next/font/google`, or a stylesheet link on stacks without it) — an app
+running on the system fallback looks generic no matter how correct the rest of
+the system is, and nothing errors when it happens.
 
 ### Tokens
 
@@ -162,6 +177,7 @@ templates/
   cn.ts                     clsx + tailwind-merge helper
   app-shell.tsx             reference layout, layers 1→6
   card-example.tsx          canonical glass card composition
+  static-shell.html         complete no-build page (CDN Tailwind)
 references/
   stack-setup.md            per-framework install steps
   migration.md              converting an existing codebase

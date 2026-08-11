@@ -34,7 +34,19 @@ export const AXO_SHELL_BG = [
   "dark:from-purple-950/95 dark:via-gray-900 dark:to-indigo-950/95",
 ].join(" ");
 
-/** Layer 2: Fixed overlay wash (positioned fixed, inset-0, pointer-events-none) */
+/**
+ * Layer 2a: Ambient glow — REQUIRED for the glass to read as glass.
+ *
+ * Without this, every card sits on a locally flat backdrop and `backdrop-blur`
+ * has nothing to refract, so the whole system collapses into flat panels. The
+ * radial blooms are defined as `.axo-shell-glow` in globals.css because
+ * Tailwind cannot express layered radial gradients legibly.
+ *
+ * Render it as a fixed sibling directly after AXO_SHELL_BG.
+ */
+export const AXO_SHELL_GLOW = "axo-shell-glow fixed inset-0 pointer-events-none z-0";
+
+/** Layer 2b: Fixed overlay wash, sits on top of the glow */
 export const AXO_SHELL_OVERLAY = [
   "fixed inset-0 pointer-events-none z-0",
   "bg-gradient-to-br",
@@ -56,13 +68,18 @@ export const AXO_PAGE_CONTAINER = [
   "dark:bg-black/20 dark:border-white/10",
 ].join(" ");
 
-/** Layer 6: Standard glass card */
+/**
+ * Layer 6: Standard glass card.
+ *
+ * The `inset 0 1px 0` top highlight is what sells the glass — it reads as light
+ * catching the top edge of a pane. Without it the card is just a tinted box.
+ */
 export const AXO_GLASS_CARD = [
   "relative overflow-hidden rounded-3xl border backdrop-blur-xl",
   "bg-white/60 border-purple-200/30",
-  "shadow-[0_4px_24px_-4px_rgba(147,51,234,0.08)]",
-  "dark:bg-black/40 dark:border-white/20",
-  "dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)]",
+  "shadow-[0_4px_24px_-4px_rgba(147,51,234,0.10),inset_0_1px_0_rgba(255,255,255,0.60)]",
+  "dark:bg-black/40 dark:border-white/15",
+  "dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.60),inset_0_1px_0_rgba(255,255,255,0.07)]",
 ].join(" ");
 
 /** Inner gradient glow overlay for glass cards */
@@ -180,29 +197,55 @@ export const AXO_MODAL = [
   "dark:shadow-[0_24px_80px_-12px_rgba(0,0,0,0.6)]",
 ].join(" ");
 
-/** Active sidebar navigation link */
+/**
+ * Sidebar nav links — theme-INVARIANT, like the sidebar they sit on.
+ *
+ * These deliberately carry no `dark:` variants. The sidebar is always the same
+ * deep purple (AXO_SIDEBAR_STYLE), so a light-mode variant here would paint
+ * dark purple text onto a dark purple panel and vanish. Everything rendered
+ * inside the sidebar is styled against purple, never against the page theme.
+ */
 export const AXO_SIDEBAR_LINK_ACTIVE = [
   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-  "bg-white/50 text-purple-700 shadow-sm",
-  "dark:bg-white/10 dark:text-white",
+  "bg-white/15 text-white shadow-sm ring-1 ring-white/10",
 ].join(" ");
 
 /** Inactive sidebar navigation link */
 export const AXO_SIDEBAR_LINK_INACTIVE = [
   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-  "text-purple-900/50 hover:text-purple-900/80 hover:bg-white/30",
-  "dark:text-white/40 dark:hover:text-white/80 dark:hover:bg-white/5",
+  "text-white/65 hover:text-white hover:bg-white/10",
 ].join(" ");
 
 // ─── Sidebar Inline Styles (color-mix) ───────────────────────────────────────
 
 /**
  * Sidebar background — fixed deep purple, same in light AND dark mode.
- * Uses color-mix() because Tailwind cannot express this value.
+ *
+ * A vertical gradient, not a flat fill: a full-height slab of one saturated
+ * purple reads cheap and fights the rest of the shell. The `backgroundColor`
+ * is the fallback for when the token is unavailable; the gradient paints over
+ * it. Uses color-mix() because Tailwind cannot express these values.
  */
 export const AXO_SIDEBAR_STYLE: CSSProperties = {
   backgroundColor: "color-mix(in srgb, oklch(0.45 0.25 290) 85%, black)",
+  backgroundImage: "var(--axo-sidebar-gradient)",
 };
+
+/** Sidebar right edge — separates it from the shell without a hard line */
+export const AXO_SIDEBAR_EDGE = "border-r border-white/10";
+
+/** Sidebar brand/header block */
+export const AXO_SIDEBAR_HEADER = "flex items-center gap-2.5 px-3 py-4 text-white";
+
+/** Uppercase group label between sidebar sections */
+export const AXO_SIDEBAR_SECTION_LABEL =
+  "px-3 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/35";
+
+/** Divider inside the sidebar */
+export const AXO_SIDEBAR_DIVIDER = "my-2 h-px bg-white/10";
+
+/** Sidebar footer region (user, theme toggle, sign out) */
+export const AXO_SIDEBAR_FOOTER = "mt-auto flex flex-col gap-1 border-t border-white/10 pt-3";
 
 /** @deprecated Use AXO_SIDEBAR_STYLE instead */
 export const AXO_SIDEBAR_STYLE_DARK = AXO_SIDEBAR_STYLE;

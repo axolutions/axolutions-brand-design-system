@@ -1,0 +1,237 @@
+<!doctype html>
+<!--
+  Axolutions shell — static HTML reference.
+
+  For pages with no build step. Tailwind runs in the browser via the CDN build,
+  and the AXO_* constants are expressed as CSS classes (same names, kebab-cased:
+  AXO_GLASS_CARD -> .axo-glass-card) so DESIGN.md still reads correctly.
+
+  Two things this file exists to get right, because both fail silently:
+    1. The font is loaded. Without the <link> below, everything falls back to
+       system-ui and the page looks generic no matter how correct the rest is.
+    2. .axo-shell-glow is present. Glass needs something behind it to refract;
+       without the bloom layer every card renders as a flat panel.
+
+  For anything with a build step, prefer the real templates (globals.css +
+  shell-identity.ts) over this file.
+-->
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Axolutions</title>
+
+    <!-- Brand typeface — REQUIRED. Public Sans + JetBrains Mono. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Apply the stored theme before first paint, or the page flashes. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("axo-theme");
+          var dark = t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {}
+      })();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style type="text/tailwindcss">
+      @custom-variant dark (&:is(.dark *));
+
+      :root {
+        --axo-purple: oklch(0.45 0.25 290); /* #5D0EC1 */
+        --axo-sidebar-gradient: linear-gradient(
+          180deg,
+          color-mix(in srgb, oklch(0.45 0.25 290) 80%, black) 0%,
+          color-mix(in srgb, oklch(0.45 0.25 290) 55%, black) 100%
+        );
+        --background: oklch(0.99 0.005 290);
+        --foreground: oklch(0.25 0.02 290);
+        --primary: oklch(0.45 0.25 290);
+        --primary-foreground: oklch(1 0 0);
+        --border: oklch(0.9 0.02 290);
+        --radius: 0.75rem;
+      }
+
+      .dark {
+        --background: oklch(0.16 0.02 290);
+        --foreground: oklch(0.985 0 0);
+        --primary: oklch(0.58 0.24 292);
+        --border: oklch(1 0 0 / 0.12);
+      }
+
+      @theme inline {
+        --font-sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-border: var(--border);
+      }
+
+      body {
+        background-color: var(--background);
+        color: var(--foreground);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Ambient bloom — see the header comment. Not decoration. */
+      .axo-shell-glow {
+        background-image:
+          radial-gradient(58% 44% at 12% 0%, oklch(0.45 0.25 290 / 0.1), transparent 72%),
+          radial-gradient(48% 38% at 88% 6%, oklch(0.55 0.19 265 / 0.08), transparent 72%),
+          radial-gradient(46% 40% at 62% 100%, oklch(0.5 0.22 300 / 0.07), transparent 72%);
+      }
+      .dark .axo-shell-glow {
+        background-image:
+          radial-gradient(58% 44% at 12% 0%, oklch(0.55 0.27 292 / 0.3), transparent 70%),
+          radial-gradient(50% 38% at 88% 4%, oklch(0.55 0.22 265 / 0.22), transparent 70%),
+          radial-gradient(48% 42% at 66% 100%, oklch(0.5 0.24 305 / 0.2), transparent 72%);
+      }
+
+      @layer components {
+        .axo-shell-bg {
+          @apply bg-gradient-to-br from-purple-100/80 via-white to-indigo-100/80
+                 dark:from-purple-950/95 dark:via-gray-900 dark:to-indigo-950/95;
+        }
+        .axo-shell-overlay {
+          @apply fixed inset-0 pointer-events-none z-0 bg-gradient-to-br
+                 from-purple-300/10 via-transparent to-blue-300/10
+                 dark:from-purple-500/5 dark:via-transparent dark:to-blue-500/5;
+        }
+        .axo-header-bar {
+          @apply relative z-10 border-b backdrop-blur-xl bg-white/60 border-purple-200/40
+                 dark:bg-black/30 dark:border-white/10;
+        }
+        .axo-page-container {
+          @apply relative rounded-3xl border backdrop-blur-sm bg-white/40 border-purple-200/20
+                 dark:bg-black/20 dark:border-white/10;
+        }
+        .axo-glass-card {
+          @apply relative overflow-hidden rounded-3xl border backdrop-blur-xl
+                 bg-white/60 border-purple-200/30
+                 shadow-[0_4px_24px_-4px_rgba(147,51,234,0.10),inset_0_1px_0_rgba(255,255,255,0.60)]
+                 dark:bg-black/40 dark:border-white/15
+                 dark:shadow-[0_8px_32px_-8px_rgba(0,0,0,0.60),inset_0_1px_0_rgba(255,255,255,0.07)];
+        }
+        .axo-card-overlay {
+          @apply absolute inset-0 rounded-3xl pointer-events-none bg-gradient-to-br
+                 from-purple-200/10 via-transparent to-blue-200/10
+                 dark:from-purple-500/5 dark:via-transparent dark:to-blue-500/5;
+        }
+        .axo-text-primary { @apply text-gray-900 dark:text-white; }
+        .axo-text-muted   { @apply text-gray-500 dark:text-white/60; }
+        .axo-icon-box {
+          @apply flex items-center justify-center rounded-xl bg-purple-100/60 text-purple-600
+                 dark:bg-purple-500/10 dark:text-purple-400;
+        }
+        .axo-button-primary {
+          @apply rounded-xl font-medium transition-all bg-purple-600 text-white border border-purple-600
+                 hover:bg-purple-700 hover:border-purple-700
+                 dark:bg-purple-600 dark:border-purple-500/50
+                 dark:hover:bg-purple-500 dark:hover:border-purple-400/50;
+        }
+
+        /* Sidebar — theme-INVARIANT. No dark: variants in here: the panel is
+           always deep purple, so a light-mode variant would vanish. */
+        .axo-sidebar-edge   { @apply border-r border-white/10; }
+        .axo-sidebar-header { @apply flex items-center gap-2.5 px-3 py-4 text-white; }
+        .axo-sidebar-section-label {
+          @apply px-3 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/35;
+        }
+        .axo-sidebar-divider { @apply my-2 h-px bg-white/10; }
+        .axo-sidebar-footer  { @apply mt-auto flex flex-col gap-1 border-t border-white/10 pt-3; }
+        .axo-sidebar-link-active {
+          @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                 bg-white/15 text-white shadow-sm ring-1 ring-white/10;
+        }
+        .axo-sidebar-link-inactive {
+          @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                 text-white/65 hover:text-white hover:bg-white/10;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Layer 1 -->
+    <div class="axo-shell-bg relative min-h-screen">
+      <!-- Layer 2a — required -->
+      <div class="axo-shell-glow fixed inset-0 pointer-events-none z-0" aria-hidden="true"></div>
+      <!-- Layer 2b -->
+      <div class="axo-shell-overlay" aria-hidden="true"></div>
+
+      <div class="relative z-10 flex min-h-screen">
+        <!-- Layer 4 — sidebar -->
+        <aside
+          class="axo-sidebar-edge hidden w-64 shrink-0 flex-col gap-1 p-3 md:flex"
+          style="background-color: color-mix(in srgb, oklch(0.45 0.25 290) 85%, black);
+                 background-image: var(--axo-sidebar-gradient);"
+        >
+          <div class="axo-sidebar-header">
+            <span class="flex size-8 items-center justify-center rounded-xl bg-white/15 text-sm font-semibold">A</span>
+            <span class="text-lg font-semibold">Axolutions</span>
+          </div>
+
+          <nav class="flex flex-col gap-1" aria-label="Navegação principal">
+            <a href="#" class="axo-sidebar-link-active" aria-current="page">Visão geral</a>
+            <a href="#" class="axo-sidebar-link-inactive">Posições</a>
+            <a href="#" class="axo-sidebar-link-inactive">Relatórios</a>
+          </nav>
+
+          <div class="axo-sidebar-section-label">Carteira</div>
+          <div class="axo-sidebar-divider"></div>
+
+          <div class="axo-sidebar-footer">
+            <button
+              type="button"
+              onclick="document.documentElement.classList.toggle('dark');
+                       localStorage.setItem('axo-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')"
+              class="axo-sidebar-link-inactive w-full text-left"
+            >
+              Alternar tema
+            </button>
+          </div>
+        </aside>
+
+        <div class="flex min-w-0 flex-1 flex-col">
+          <!-- Layer 3 -->
+          <header class="axo-header-bar flex items-center justify-between px-6 py-4">
+            <div>
+              <h1 class="axo-text-primary text-xl font-semibold">Visão geral</h1>
+              <p class="axo-text-muted text-sm">Subtítulo da página</p>
+            </div>
+            <button class="axo-button-primary px-4 py-2">Ação principal</button>
+          </header>
+
+          <!-- Layer 5 -->
+          <main class="flex-1 p-6">
+            <div class="axo-page-container p-6">
+              <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Layer 6 — card. Content needs relative z-10 or the overlay covers it. -->
+                <div class="axo-glass-card">
+                  <div class="axo-card-overlay" aria-hidden="true"></div>
+                  <div class="relative z-10 p-6">
+                    <div class="flex items-center gap-3">
+                      <div class="axo-icon-box h-9 w-9">◈</div>
+                      <div class="axo-text-primary font-semibold">Título do card</div>
+                    </div>
+                    <p class="axo-text-muted mt-2 text-sm">Descrição de apoio.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

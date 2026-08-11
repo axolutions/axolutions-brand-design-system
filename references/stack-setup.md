@@ -5,6 +5,54 @@ package manager (`bun add`, `pnpm add`, `npm i`, `yarn add`).
 
 ---
 
+## Fonts — the step most likely to be skipped
+
+Brand typeface: **Public Sans**. Code and IDs: **JetBrains Mono**.
+
+`globals.css` resolves `--font-sans` to
+`var(--font-public-sans, "Public Sans"), system-ui, …`. That chain is
+deliberately forgiving, which also means **nothing errors when the font is
+missing** — the app just quietly renders in the system font and looks generic.
+Always verify the font after wiring it.
+
+**Next.js** — `next/font/google`, self-hosted at build time, no network request
+at runtime:
+
+```tsx
+// app/layout.tsx
+import { Public_Sans, JetBrains_Mono } from "next/font/google";
+
+const sans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"], display: "swap" });
+const mono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"], display: "swap" });
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="pt-BR" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+The `variable` names must match the CSS exactly — `--font-public-sans` and
+`--font-jetbrains-mono`. A typo here is invisible: the fallback silently wins.
+
+**Vite / static HTML / anything else** — stylesheet link in `<head>`:
+
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+```
+
+Or `@fontsource/public-sans` + `@fontsource/jetbrains-mono` when the project
+must not hit a third-party CDN.
+
+**Verify:** open devtools, inspect any body text, and confirm the computed
+`font-family` resolves to Public Sans rather than the system fallback.
+
+---
+
 ## Common dependencies (every React stack)
 
 ```bash

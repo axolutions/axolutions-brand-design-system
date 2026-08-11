@@ -108,8 +108,51 @@ WHITE_PRIMARY=$(
 )
 report "--primary is near-white in dark mode (shadcn default leak — brand disappears)" "$WHITE_PRIMARY"
 
-# ── Component-level violations ───────────────────────────────────────────────
 IDENTITY_EXCLUDE=(-g '!**/shell-identity.ts' -g '!**/globals.css' -g '!**/main.css')
+
+# ── Silent-failure checks ────────────────────────────────────────────────────
+# These two break the look completely while every individual class stays valid,
+# so nothing errors and the audit is the only thing that catches them.
+section "Silent failures"
+
+# 1. The brand font must actually be loaded, not just referenced.
+if rg -q 'next/font|fonts\.googleapis\.com|@fontsource|localFont' \
+     "${CODE_GLOBS[@]}" -g '*.css' -g '*.html' . 2>/dev/null; then
+  printf '  ✓ a font loader is wired\n'
+else
+  printf '  ✗ no font loader found — Public Sans never loads and the app\n'
+  printf '    silently renders in the system font (next/font, a Google Fonts\n'
+  printf '    <link>, or @fontsource)\n'
+  VIOLATIONS=$((VIOLATIONS + 1))
+fi
+
+# Catch a --font-sans pointing at a variable nothing defines.
+FONT_VAR=$(rg -o --no-filename '--font-sans:\s*var\(([^,)]+)' -r '$1' -g '*.css' . 2>/dev/null | head -1)
+if [ -n "$FONT_VAR" ] && ! rg -q -- "${FONT_VAR}[\"']?\s*[:=]|variable:\s*[\"']${FONT_VAR}" \
+     "${CODE_GLOBS[@]}" -g '*.css' . 2>/dev/null; then
+  printf '  ✗ --font-sans points at %s, which nothing defines — the whole app\n' "$FONT_VAR"
+  printf '    falls through to the system font\n'
+  VIOLATIONS=$((VIOLATIONS + 1))
+fi
+
+# 2. The glass needs the ambient bloom behind it.
+if rg -q 'AXO_SHELL_BG|axo-shell-bg' "${CODE_GLOBS[@]}" -g '*.html' . 2>/dev/null; then
+  if rg -q 'AXO_SHELL_GLOW|axo-shell-glow' "${CODE_GLOBS[@]}" -g '*.html' -g '*.css' . 2>/dev/null; then
+    printf '  ✓ ambient glow layer present\n'
+  else
+    printf '  ✗ shell background used without AXO_SHELL_GLOW — cards have nothing\n'
+    printf '    to refract and render as flat panels instead of glass\n'
+    VIOLATIONS=$((VIOLATIONS + 1))
+  fi
+fi
+
+# 3. Sidebar contents are theme-invariant; a dark: variant there disappears.
+SIDEBAR_DARK=$(rg -n --multiline --multiline-dotall \
+  'AXO_SIDEBAR_(LINK_[A-Z]+|HEADER|FOOTER|DIVIDER|SECTION_LABEL|EDGE)[^;]*?dark:' \
+  -g '**/shell-identity.ts' . 2>/dev/null)
+report "dark: variant inside a sidebar constant — the sidebar never changes theme, so this renders dark-on-dark in light mode" "$SIDEBAR_DARK"
+
+# ── Component-level violations ───────────────────────────────────────────────
 
 HARDCODED=$(rg -n '#5[Dd]0[Ee][Cc]1|#9200cf|#6a00cf|#b44dff|#d896ff|#4a0082' \
   "${CODE_GLOBS[@]}" "${IDENTITY_EXCLUDE[@]}" . 2>/dev/null)
@@ -123,9 +166,14 @@ report "Theme branching in JS — legitimate only inside a theme toggle; anythin
 HANDROLLED=$(rg -n 'backdrop-blur' "${CODE_GLOBS[@]}" "${IDENTITY_EXCLUDE[@]}" . 2>/dev/null)
 report "Hand-rolled glass surfaces — use AXO_GLASS_CARD / AXO_MODAL / AXO_HEADER_BAR" "$HANDROLLED"
 
+# Translucent white overlays (bg-white/5 … /30, text-white/NN) are the
+# theme-invariant idiom used on the purple sidebar, so they are exempt — they
+# are painted over a panel that never changes theme.
 LIGHT_ONLY=$(rg -n 'className=.*(bg-white|bg-black|text-black|text-gray-900|border-gray-200)' \
-  "${CODE_GLOBS[@]}" "${IDENTITY_EXCLUDE[@]}" -g '!**/ui/**' . 2>/dev/null | rg -v 'dark:')
-report "Light-only class strings (no dark: sibling)" "$LIGHT_ONLY"
+  "${CODE_GLOBS[@]}" "${IDENTITY_EXCLUDE[@]}" -g '!**/ui/**' . 2>/dev/null \
+  | rg -v 'dark:' \
+  | rg -v 'bg-white/(5|10|15|20|25|30)\b')
+report "Light-only class strings (no dark: sibling, excluding sidebar overlays)" "$LIGHT_ONLY"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 printf '\n'

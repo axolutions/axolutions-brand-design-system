@@ -60,8 +60,25 @@ Live example: `axolutions/` (Nuxt 4 + Nuxt UI + Tailwind v4).
 
 ## Plain HTML / Astro / server-rendered templates
 
-1. Include `templates/globals.css` through the Tailwind build.
-2. Export the constants as plain CSS classes instead of TS strings:
+**Start from `templates/static-shell.html`** — a complete, verified page with
+the token layer, the class exports, and the full shell markup. Copy it and
+replace the content. The notes below explain what it does.
+
+1. Include `templates/globals.css` through the Tailwind build, or inline the
+   token layer in a `<style type="text/tailwindcss">` block when using the
+   `@tailwindcss/browser` CDN (no build step).
+2. **Load the font.** There is no `next/font` here, so nothing loads Public Sans
+   unless you say so, and the page silently renders in the system font:
+
+   ```html
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+   ```
+3. **Keep `.axo-shell-glow`.** It is plain CSS (radial gradients), so it ports
+   as-is. Without it the cards have nothing to refract and render flat — the
+   single most common way a static port of this system looks wrong.
+4. Export the constants as plain CSS classes instead of TS strings:
 
    ```css
    @layer components {
@@ -76,8 +93,10 @@ Live example: `axolutions/` (Nuxt 4 + Nuxt UI + Tailwind v4).
    ```
 
    Keep the names 1:1 with the constants (`AXO_GLASS_CARD` → `.axo-glass-card`)
-   so `DESIGN.md` still reads correctly.
-3. Theme switching is a small inline script that toggles `.dark` on
+   so `DESIGN.md` still reads correctly. Sidebar classes keep **no** `dark:`
+   variants — the sidebar is theme-invariant, and a light variant there paints
+   dark text on a dark panel.
+5. Theme switching is a small inline script that toggles `.dark` on
    `<html>` and persists to `localStorage["axo-theme"]`. Run it **before first
    paint**, in `<head>`, or the page flashes light on every load:
 
